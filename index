@@ -1,53 +1,193 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ATC Roster</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    :root { --crop: 16px; }            /* height of the GAS banner (adjust if needed) */
-    html, body { height: 100%; margin: 0; }
-    .wrapper { 
-      position: relative; 
-      height: 100vh; 
-      overflow: hidden; 
-      background: #f5f7fa; 
+    /* ===== Modal Styling ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
     }
-    .appframe {
-      position: absolute; 
-      left: 0; 
-      top: calc(-1 * var(--crop));
-      width: 100%; 
-      height: calc(100% + var(--crop));
-      border: 0;
+    .modal-content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      width: 320px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.25);
+      animation: fadeIn 0.3s ease-in-out;
     }
-
-    /* ✅ Fix for mobile hidden columns */
-    @media (max-width: 768px) {
-      .appframe {
-        transform: scale(0.8);   /* zoom out slightly */
-        transform-origin: top left;
-        width: 125%;             /* expand so no columns cut */
-        height: 111%;
-      }
+    .modal-content h2 { font-size: 20px; font-weight: 700; color: #ad1a8d; }
+    .modal-content p { font-size: 14px; color: #971e9c; margin-bottom: 12px; }
+    .close { float: right; font-size: 22px; cursor: pointer; color: #999; }
+    .close:hover { color: #333; }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+      100% { transform: translateX(0); }
     }
-
-    @media (max-width: 480px) {
-      .appframe {
-        transform: scale(0.8);   /* more zoom out for small phones */
-        width: 125%;
-        height: 125%;
-      }
+    .shake { animation: shake 0.4s; border: 2px solid red !important; }
+    :root {
+      --brand1:#83f781; --brand2:#d8f781;
+      --primary:#42ebe8; --pillText:#000;
+      --headerShadow:0 6px 18px rgba(0,0,0,.15);
     }
-
-    @media (max-width: 600px) {
-      :root { --crop: 64px; }          /* banner can be taller on mobile */
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;
+      background:#f5f7fa;color:#111827;}
+    .topbar{
+      background:linear-gradient(90deg,var(--brand1),var(--brand2));
+      color:#fff;border-radius:12px;margin:16px;padding:16px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+      box-shadow:var(--headerShadow);
     }
+    .titleWrap{display:flex;align-items:center;gap:12px;}
+    .logo{width:32px;height:32px;border-radius:6px;background:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:700;color:#0ea5e9;}
+    .title{font-weight:800;font-size:22px;}
+    .subtitle{font-size:12px;opacity:.9;margin-top:2px;}
+    .modes{display:flex;gap:8px;align-items:center;}
+    .modeBtn {background:#2563eb;color:white;border:none;border-radius:6px;
+      padding:14px 24px;font-size:16px;font-weight:bold;cursor:pointer;}
+    .modeBtn:hover{background:#1d4ed8;}
+    .active{background:#ffcc00;color:#111;}
+    .inactive{background:#e5e7eb;color:#374151;}
+    .actions{display:flex;gap:10px;margin:10px 16px 0 16px;justify-content:flex-end;}
+    .btn{background:var(--primary);color:#fff;border:none;border-radius:8px;
+      padding:9px 14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15);}
+    .btn.warn{background:#f59e0b}
+    .searchRow{display:flex;gap:20px;margin:12px 16px;justify-content:space-between;flex-wrap:wrap;}
+    .search{flex:1;min-width:260px;background:#fff;border:1px solid #e5e7eb;
+      border-radius:10px;padding:10px 12px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+    .modeBadge{padding:8px 12px;background:#e5e7eb;border-radius:999px;
+      font-weight:700;color:#374151;min-width:max-content;}
+    .tableWrap{background:#fff;border-radius:12px;margin:0 16px 16px;
+      overflow-x:auto;box-shadow:0 4px 12px rgba(0,0,0,.08);}
+    table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;}
+    th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:center;white-space:nowrap;min-width:90px;}
+    thead th{position:sticky;top:0;background:#d8f781;color:#fff;z-index:1}
+    .pill{display:inline-block;min-width:42px;padding:6px 12px;border-radius:999px;
+      font-weight:800;text-transform:uppercase;color:var(--pillText);
+      border:1px solid rgba(0,0,0,.05);background:#e6e6fa;}
+    .headpill{background:#e0f2fe;font-weight:800;}
+    #status{margin:6px 16px 16px;color:#059669;font-weight:700;height:18px}
   </style>
 </head>
 <body>
-  <div class="wrapper">
-    <!-- Replace YOUR_WEB_APP_URL below with your Apps Script Web App URL -->
-    <iframe class="appframe" src="https://script.google.com/macros/s/AKfycbyOcrScNI4jvDWccD8Zg02wLTVR_4j-Tehf4r_zJxSTaMR-lzhTyEp_U2Xw8__ruo8K/exec"></iframe>
+  <div class="topbar">
+    <div class="titleWrap">
+      <div class="logo">📊</div>
+      <div>
+        <div class="title">ATC Roster Management</div>
+        <div class="subtitle">Preparation, Updation & Viewer modes</div>
+      </div>
+    </div>
+    <div class="modes">
+      <button id="prepBtn" class="modeBtn inactive" onclick="openPasswordModal('preparation')">Preparation</button>
+      <button id="updBtn"  class="modeBtn inactive" onclick="openPasswordModal('updation')">Updation</button>
+      <button id="viewBtn" class="modeBtn active"  onclick="setMode('viewer')">Viewer</button>
+    </div>
   </div>
+
+  <div class="actions">
+    <button id="finalizeBtn" class="btn">Finalize &amp; Send Roster</button>
+    <button id="sendChangesBtn" class="btn warn" style="display:none;">Send Changes Email</button>
+    <button id="sendUpdatesBtn" class="btn warn" style="display:none;">Send Updates</button>
+  </div>
+
+  <div class="searchRow">
+    <input id="searchInput" class="search" placeholder="🔍 Live search employees, shifts, etc." />
+    <div id="modeBadge" class="modeBadge">Viewer Mode</div>
+  </div>
+
+  <div class="tableWrap" id="tableWrap">
+    <div id="table-container" style="min-height:160px;display:flex;align-items:center;justify-content:center;">Loading…</div>
+  </div>
+  <div id="status"></div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzTiFn8VKv2bSWDYgcnmaQEi49Y8pgG4JlvtFDFSu_GFtmrlhST2GMQEX7lH6XHQYAcyw/exec"; // <-- replace
+
+let currentMode = 'viewer';
+let dataCache = [];
+
+function apiCall(action, params={}) {
+  const url = new URL(WEB_APP_URL);
+  url.searchParams.set("action", action);
+  for (const k in params) url.searchParams.set(k, params[k]);
+  return fetch(url).then(r => r.json());
+}
+
+function setMode(mode){
+  currentMode = mode;
+  document.getElementById('prepBtn').classList.toggle('active', mode==='preparation');
+  document.getElementById('updBtn').classList.toggle('active', mode==='updation');
+  document.getElementById('viewBtn').classList.toggle('active', mode==='viewer');
+  document.getElementById('finalizeBtn').style.display = (mode==='preparation')?'inline-block':'none';
+  document.getElementById('sendChangesBtn').style.display = (mode==='updation')?'inline-block':'none';
+  document.getElementById('sendUpdatesBtn').style.display = (mode==='updation')?'inline-block':'none';
+  document.getElementById('modeBadge').textContent = mode.charAt(0).toUpperCase()+mode.slice(1)+" Mode";
+  loadTable();
+}
+
+function loadTable(){
+  apiCall("getSheetData").then(values => {
+    dataCache = values; renderTable(values);
+  });
+}
+
+function renderTable(values){
+  if (!values.length){ document.getElementById('table-container').innerHTML="No data."; return; }
+  const headers = values[0];
+  let html = "<table id='rosterTable'><thead><tr>";
+  headers.forEach((h, idx) => {
+    html += `<th><div class="pill headpill" contenteditable="${currentMode!=='viewer'}"
+      data-row="1" data-col="${idx+1}" onblur="saveCell(this)">${h}</div></th>`;
+  });
+  html+="</tr></thead><tbody>";
+  for(let r=1;r<values.length;r++){
+    html+="<tr>";
+    for(let c=0;c<headers.length;c++){
+      const v=values[r][c]??"";
+      html+=`<td><div class="pill" contenteditable="${currentMode!=='viewer'}"
+        data-row="${r+1}" data-col="${c+1}" onblur="saveCell(this)">${v}</div></td>`;
+    }
+    html+="</tr>";
+  }
+  html+="</tbody></table>";
+  document.getElementById('table-container').innerHTML=html;
+}
+
+function saveCell(el){
+  if (currentMode==='viewer') return;
+  apiCall("updateCell",{mode:currentMode,row:el.dataset.row,col:el.dataset.col,value:el.innerText})
+    .then(res=>console.log(res));
+}
+
+document.getElementById('sendChangesBtn').onclick=()=>apiCall("sendChangesEmail").then(alert);
+document.getElementById('sendUpdatesBtn').onclick=()=>apiCall("sendUpdateEmails").then(alert);
+document.getElementById('finalizeBtn').onclick=()=>{
+  if(currentMode==='preparation') apiCall("sendRosterEmail").then(alert);
+  else if(currentMode==='updation') apiCall("sendFinalRoster").then(alert);
+};
+
+document.getElementById('searchInput').addEventListener('input',()=>{
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#rosterTable tbody tr').forEach(tr=>{
+    tr.style.display=tr.innerText.toLowerCase().includes(q)?'':'none';
+  });
+});
+
+window.onload=()=>setMode('viewer');
+</script>
 </body>
 </html>
